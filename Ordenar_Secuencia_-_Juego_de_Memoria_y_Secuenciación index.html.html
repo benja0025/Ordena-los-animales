@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ordenar Secuencia | Estimulación Cognitiva</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            teal: '#0d9488',
+                            purple: '#8b5cf6',
+                            amber: '#f59e0b'
+                        }
+                    },
+                    fontFamily: {
+                        heading: ['Fredoka', 'sans-serif'],
+                        body: ['Nunito', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f8fafc;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        h1, h2, h3, .font-heading {
+            font-family: 'Fredoka', sans-serif;
+        }
+        .draggable-card {
+            touch-action: none;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .draggable-card:active {
+            transform: scale(1.05);
+            cursor: grabbing;
+        }
+        .drop-slot-active {
+            border-color: #0284c7 !important;
+            background-color: #e0f2fe !important;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.98); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(0.98); }
+        }
+        .timer-anim {
+            animation: pulse-ring 1s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col justify-between">
+
+    <!-- Header Principal -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-teal-500 to-blue-600 p-2.5 rounded-2xl text-white shadow-md shadow-teal-500/20">
+                    <i class="fa-solid fa-arrow-down-short-wide text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold text-slate-800 leading-tight">Ordenar Secuencia</h1>
+                    <p class="text-xs text-slate-500 font-medium">Estimulación de Memoria Episódica y de Trabajo</p>
+                </div>
+            </div>
+
+            <!-- Panel de Estadísticas / Racha -->
+            <div class="flex items-center gap-3">
+                <div class="bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center gap-2">
+                    <i class="fa-solid fa-fire text-amber-500 text-base"></i>
+                    <div class="text-xs">
+                        <span class="text-slate-400 font-bold block leading-none">Racha</span>
+                        <span id="stat-streak" class="text-sm font-bold text-amber-700">0</span>
+                    </div>
+                </div>
+                <div class="bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-xl flex items-center gap-2">
+                    <i class="fa-solid fa-star text-blue-500 text-base"></i>
+                    <div class="text-xs">
+                        <span class="text-slate-400 font-bold block leading-none">Puntos</span>
+                        <span id="stat-score" class="text-sm font-bold text-blue-700">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 flex flex-col gap-5 justify-center">
+
+        <!-- Selector de Ajustes de Partida (Categoría y Dificultad) -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center gap-4">
+                <!-- Categoría -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Categoría</label>
+                    <div class="relative">
+                        <select id="select-category" onchange="resetAndGenerateGame()" class="bg-slate-50 border border-slate-300 text-slate-700 font-semibold text-sm rounded-xl px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                            <option value="animales">🐻 Animales</option>
+                            <option value="frutas">🍎 Frutas y Verduras</option>
+                            <option value="hogar">🏠 Objetos del Hogar</option>
+                            <option value="vehiculos">🚗 Vehículos</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Dificultad -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Dificultad (# Elementos)</label>
+                    <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200 gap-1">
+                        <button onclick="setDifficulty(3)" id="btn-diff-3" class="diff-btn px-3 py-1 rounded-lg text-xs font-bold transition-all text-slate-600">3 Fácil</button>
+                        <button onclick="setDifficulty(4)" id="btn-diff-4" class="diff-btn px-3 py-1 rounded-lg text-xs font-bold transition-all bg-white text-blue-600 shadow-sm">4 Medio</button>
+                        <button onclick="setDifficulty(5)" id="btn-diff-5" class="diff-btn px-3 py-1 rounded-lg text-xs font-bold transition-all text-slate-600">5 Difícil</button>
+                        <button onclick="setDifficulty(6)" id="btn-diff-6" class="diff-btn px-3 py-1 rounded-lg text-xs font-bold transition-all text-slate-600">6 Experto</button>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="resetAndGenerateGame()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-colors flex items-center gap-2">
+                <i class="fa-solid fa-arrows-rotate"></i> Nueva Secuencia
+            </button>
+        </div>
+
+        <!-- AREA PRINCIPAL DEL JUEGO -->
+        <div class="bg-white p-6 rounded-3xl shadow-md border border-slate-200 flex flex-col gap-6 relative min-h-[380px] justify-between">
+            
+            <!-- Barra Superior de Instrucción y Cronómetro -->
+            <div class="flex flex-wrap items-center justify-between border-b border-slate-100 pb-4 gap-3">
+                <div class="flex items-center gap-3">
+                    <div id="phase-icon" class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-lg font-bold">
+                        1
+                    </div>
+                    <div>
+                        <h2 id="phase-instruction-title" class="font-bold text-slate-800 text-lg leading-tight">Observa atentamente la secuencia</h2>
+                        <p id="phase-instruction-desc" class="text-xs text-slate-500">Memoriza el orden de aparición de izquierda a derecha.</p>
+                    </div>
+                </div>
+
+                <!-- Temporizador / Estado -->
+                <div id="timer-box" class="flex items-center gap-2 bg-amber-50 border border-amber-200 px-4 py-2 rounded-xl text-amber-800 timer-anim">
+                    <i class="fa-solid fa-clock text-amber-600 text-lg"></i>
+                    <span id="timer-text" class="font-bold text-xl font-heading">07s</span>
+                </div>
+            </div>
+
+            <!-- FASE 1: VISUALIZACIÓN DE LA SECUENCIA ORIGINAL -->
+            <div id="phase-memorize-container" class="flex flex-col items-center justify-center py-6 gap-6">
+                <div id="target-sequence-display" class="flex flex-wrap items-center justify-center gap-3 sm:gap-4 w-full">
+                    <!-- Tarjetas memorizables JS -->
+                </div>
+                
+                <button onclick="skipMemorizeTimer()" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-eye-slash"></i> ¡Listo, ya lo memoricé!
+                </button>
+            </div>
+
+            <!-- FASE 2: ORDENAMIENTO (OCULTA INICIALMENTE) -->
+            <div id="phase-recall-container" class="hidden flex-col gap-6">
+                
+                <!-- Banco de Elementos Desordenados -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Elementos a ordenar (Haz clic o arrastra):</span>
+                        <span id="unplaced-count-badge" class="text-xs font-bold text-blue-600 bg-blue-100 px-2.5 py-0.5 rounded-full">4 pendientes</span>
+                    </div>
+                    <div id="shuffled-pool" class="flex flex-wrap items-center justify-center gap-3 min-h-[90px] p-2">
+                        <!-- Elementos mezclados JS -->
+                    </div>
+                </div>
+
+                <!-- Casillas de Soltado / Posiciones -->
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2 text-center">Coloca los elementos en el orden original:</span>
+                    <div id="slots-container" class="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+                        <!-- Casillas destino JS -->
+                    </div>
+                </div>
+
+                <!-- Botón de Comprobación -->
+                <div class="flex justify-center pt-2">
+                    <button id="btn-check-answer" onclick="checkAnswer()" class="px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-check"></i> Comprobar Secuencia
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-4 text-xs text-slate-400">
+        Estimulación Cognitiva - Memoria de Trabajo & Secuenciación
+    </footer>
+
+    <!-- MODAL RESULTADOS -->
+    <div id="modal-result" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 text-center shadow-2xl transform transition-all">
+            <div id="modal-icon-bg" class="w-20 h-20 mx-auto mb-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl">
+                <i id="modal-icon" class="fa-solid fa-trophy"></i>
+            </div>
+            <h3 id="modal-title" class="text-2xl font-bold text-slate-800 mb-2 font-heading">¡Secuencia Correcta!</h3>
+            <p id="modal-msg" class="text-slate-600 text-sm mb-6">Has recordado el orden exacto de los elementos.</p>
+            
+            <div class="bg-slate-50 p-4 rounded-2xl mb-6 flex justify-around text-center border border-slate-100">
+                <div>
+                    <span class="block text-xs text-slate-400 font-bold uppercase">Aciertos</span>
+                    <span id="modal-stat-hits" class="text-xl font-bold text-emerald-600">4/4</span>
+                </div>
+                <div class="border-r border-slate-200"></div>
+                <div>
+                    <span class="block text-xs text-slate-400 font-bold uppercase">Puntos ganados</span>
+                    <span id="modal-stat-points" class="text-xl font-bold text-blue-600">+100</span>
+                </div>
+            </div>
+
+            <button onclick="closeModalAndNext()" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition-all">
+                Siguiente Nivel
+            </button>
+        </div>
+    </div>
+
+    <!-- SCRIPT DE LÓGICA -->
+    <script>
+        /* ==================== BASE DE DATOS DE CATEGORÍAS ==================== */
+        const CATEGORIES_DATA = {
+            animales: [
+                { id: 'a1', name: 'Oso', icon: '🐻', bg: 'bg-amber-100', border: 'border-amber-300' },
+                { id: 'a2', name: 'Lobo', icon: '🐺', bg: 'bg-slate-100', border: 'border-slate-300' },
+                { id: 'a3', name: 'Zorro', icon: '🦊', bg: 'bg-orange-100', border: 'border-orange-300' },
+                { id: 'a4', name: 'Ciervo', icon: '🦌', bg: 'bg-amber-100', border: 'border-amber-400' },
+                { id: 'a5', name: 'León', icon: '🦁', bg: 'bg-yellow-100', border: 'border-yellow-300' },
+                { id: 'a6', name: 'Elefante', icon: '🐘', bg: 'bg-blue-100', border: 'border-blue-300' },
+                { id: 'a7', name: 'Gato', icon: '🐱', bg: 'bg-stone-100', border: 'border-stone-300' },
+                { id: 'a8', name: 'Perro', icon: '🐶', bg: 'bg-amber-100', border: 'border-amber-300' },
+                { id: 'a9', name: 'Tigre', icon: '🐯', bg: 'bg-orange-100', border: 'border-orange-400' },
+                { id: 'a10', name: 'Mono', icon: '🐵', bg: 'bg-amber-100', border: 'border-amber-300' }
+            ],
+            frutas: [
+                { id: 'f1', name: 'Manzana', icon: '🍎', bg: 'bg-red-100', border: 'border-red-300' },
+                { id: 'f2', name: 'Plátano', icon: '🍌', bg: 'bg-yellow-100', border: 'border-yellow-300' },
+                { id: 'f3', name: 'Uva', icon: '🍇', bg: 'bg-purple-100', border: 'border-purple-300' },
+                { id: 'f4', name: 'Naranja', icon: '🍊', bg: 'bg-orange-100', border: 'border-orange-300' },
+                { id: 'f5', name: 'Fresa', icon: '🍓', bg: 'bg-rose-100', border: 'border-rose-300' },
+                { id: 'f6', name: 'Sandía', icon: '🍉', bg: 'bg-emerald-100', border: 'border-emerald-300' },
+                { id: 'f7', name: 'Piña', icon: '🍍', bg: 'bg-amber-100', border: 'border-amber-300' },
+                { id: 'f8', name: 'Aguacate', icon: '🥑', bg: 'bg-green-100', border: 'border-green-300' }
+            ],
+            hogar: [
+                { id: 'h1', name: 'Lámpara', icon: '💡', bg: 'bg-yellow-100', border: 'border-yellow-300' },
+                { id: 'h2', name: 'Silla', icon: '🪑', bg: 'bg-amber-100', border: 'border-amber-300' },
+                { id: 'h3', name: 'Reloj', icon: '⏰', bg: 'bg-blue-100', border: 'border-blue-300' },
+                { id: 'h4', name: 'Cama', icon: '🛏️', bg: 'bg-indigo-100', border: 'border-indigo-300' },
+                { id: 'h5', name: 'Televisor', icon: '📺', bg: 'bg-slate-100', border: 'border-slate-300' },
+                { id: 'h6', name: 'Planta', icon: '🪴', bg: 'bg-emerald-100', border: 'border-emerald-300' },
+                { id: 'h7', name: 'Llave', icon: '🔑', bg: 'bg-amber-100', border: 'border-amber-300' }
+            ],
+            vehiculos: [
+                { id: 'v1', name: 'Coche', icon: '🚗', bg: 'bg-red-100', border: 'border-red-300' },
+                { id: 'v2', name: 'Autobús', icon: '🚌', bg: 'bg-yellow-100', border: 'border-yellow-300' },
+                { id: 'v3', name: 'Bicicleta', icon: '🚲', bg: 'bg-emerald-100', border: 'border-emerald-300' },
+                { id: 'v4', name: 'Avión', icon: '✈️', bg: 'bg-sky-100', border: 'border-sky-300' },
+                { id: 'v5', name: 'Barco', icon: '🚢', bg: 'bg-blue-100', border: 'border-blue-300' },
+                { id: 'v6', name: 'Tren', icon: '🚆', bg: 'bg-indigo-100', border: 'border-indigo-300' }
+            ]
+        };
+
+        /* ==================== ESTADO DEL JUEGO ==================== */
+        let currentDifficulty = 4; // 3, 4, 5, 6
+        let targetSequence = []; // Secuencia ordenada correcta
+        let shuffledItems = []; // Elementos mezclados disponibles
+        let userSlots = []; // Array con elementos colocados por el usuario
+        let gamePhase = 'MEMORIZE'; // 'MEMORIZE' | 'RECALL'
+        
+        let memorizeTimer = 7;
+        let timerInterval = null;
+
+        let selectedUnplacedItem = null; // Para interacción por clics en móvil
+        let streak = 0;
+        let score = 0;
+
+        /* ==================== SONIDOS SINTETIZADOS ==================== */
+        function playSound(type) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'success') {
+                    osc.frequency.setValueAtTime(440, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.2);
+                    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.3);
+                } else if (type === 'pop') {
+                    osc.frequency.setValueAtTime(300, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.1);
+                } else if (type === 'error') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.3);
+                }
+            } catch(e) { /* AudioContext no permitido sin interacción */ }
+        }
+
+        /* ==================== INICIALIZACIÓN ==================== */
+        window.onload = () => {
+            resetAndGenerateGame();
+        };
+
+        function setDifficulty(diff) {
+            currentDifficulty = diff;
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.className = "diff-btn px-3 py-1 rounded-lg text-xs font-bold transition-all text-slate-600";
+            });
+            const activeBtn = document.getElementById(`btn-diff-${diff}`);
+            if (activeBtn) activeBtn.className = "diff-btn px-3 py-1 rounded-lg text-xs font-bold transition-all bg-white text-blue-600 shadow-sm";
+            resetAndGenerateGame();
+        }
+
+        function resetAndGenerateGame() {
+            clearInterval(timerInterval);
+            selectedUnplacedItem = null;
+
+            const categoryKey = document.getElementById('select-category').value;
+            const categoryPool = [...CATEGORIES_DATA[categoryKey]];
+
+            // Seleccionar elementos al azar sin repetir
+            targetSequence = categoryPool.sort(() => 0.5 - Math.random()).slice(0, currentDifficulty);
+
+            // Crear copia mezclada asegurando que NO quede exactamente igual al original por azar
+            do {
+                shuffledItems = [...targetSequence].sort(() => 0.5 - Math.random());
+            } while (shuffledItems.every((val, index) => val.id === targetSequence[index].id) && targetSequence.length > 1);
+
+            userSlots = new Array(currentDifficulty).fill(null);
+
+            // Iniciar Fase 1: Memorizar
+            startMemorizePhase();
+        }
+
+        /* ==================== FASE 1: MEMORIZACIÓN ==================== */
+        function startMemorizePhase() {
+            gamePhase = 'MEMORIZE';
+
+            document.getElementById('phase-icon').innerText = '1';
+            document.getElementById('phase-instruction-title').innerText = 'Observa atentamente la secuencia';
+            document.getElementById('phase-instruction-desc').innerText = 'Memoriza el orden de los elementos de izquierda a derecha.';
+            
+            document.getElementById('phase-memorize-container').classList.remove('hidden');
+            document.getElementById('phase-memorize-container').classList.add('flex');
+            document.getElementById('phase-recall-container').classList.add('hidden');
+            document.getElementById('phase-recall-container').classList.remove('flex');
+
+            renderTargetSequence();
+
+            // Tiempo proporcional a la dificultad (ej. 3 elementos -> 6s, 4 -> 8s)
+            memorizeTimer = Math.max(5, currentDifficulty * 2);
+            document.getElementById('timer-box').className = "flex items-center gap-2 bg-amber-50 border border-amber-200 px-4 py-2 rounded-xl text-amber-800 timer-anim";
+            document.getElementById('timer-text').innerText = `${memorizeTimer < 10 ? '0' : ''}${memorizeTimer}s`;
+
+            timerInterval = setInterval(() => {
+                memorizeTimer--;
+                document.getElementById('timer-text').innerText = `${memorizeTimer < 10 ? '0' : ''}${memorizeTimer}s`;
+
+                if (memorizeTimer <= 0) {
+                    clearInterval(timerInterval);
+                    startRecallPhase();
+                }
+            }, 1000);
+        }
+
+        function renderTargetSequence() {
+            const container = document.getElementById('target-sequence-display');
+            container.innerHTML = '';
+
+            targetSequence.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = `flex flex-col items-center justify-center w-24 h-32 sm:w-28 sm:h-36 ${item.bg} border-2 ${item.border} rounded-2xl shadow-sm transform transition-transform hover:scale-105 select-none relative`;
+                card.innerHTML = `
+                    <span class="absolute top-2 left-2 text-xs font-bold text-slate-400 bg-white/60 px-1.5 py-0.5 rounded-md">#${index + 1}</span>
+                    <span class="text-4xl sm:text-5xl mb-2">${item.icon}</span>
+                    <span class="font-bold text-xs sm:text-sm text-slate-700">${item.name}</span>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function skipMemorizeTimer() {
+            clearInterval(timerInterval);
+            startRecallPhase();
+        }
+
+        /* ==================== FASE 2: RECUERDO / ORDENAMIENTO ==================== */
+        function startRecallPhase() {
+            gamePhase = 'RECALL';
+            playSound('pop');
+
+            document.getElementById('phase-icon').innerText = '2';
+            document.getElementById('phase-instruction-title').innerText = 'Reordena la secuencia';
+            document.getElementById('phase-instruction-desc').innerText = 'Coloca cada elemento en la casilla correspondiente según el orden memorizado.';
+
+            document.getElementById('timer-box').className = "flex items-center gap-2 bg-blue-50 border border-blue-200 px-4 py-2 rounded-xl text-blue-800";
+            document.getElementById('timer-text').innerText = '¡A ordenar!';
+
+            document.getElementById('phase-memorize-container').classList.add('hidden');
+            document.getElementById('phase-memorize-container').classList.remove('flex');
+            document.getElementById('phase-recall-container').classList.remove('hidden');
+            document.getElementById('phase-recall-container').classList.add('flex');
+
+            renderShuffledPool();
+            renderSlots();
+        }
+
+        function renderShuffledPool() {
+            const pool = document.getElementById('shuffled-pool');
+            pool.innerHTML = '';
+
+            let unplacedCount = 0;
+
+            shuffledItems.forEach(item => {
+                const isPlaced = userSlots.some(s => s && s.id === item.id);
+                if (!isPlaced) {
+                    unplacedCount++;
+                    const card = document.createElement('div');
+                    card.draggable = true;
+                    card.ondragstart = (e) => handleDragStart(e, item.id);
+                    card.onclick = () => handlePoolItemClick(item);
+
+                    const isSelected = selectedUnplacedItem && selectedUnplacedItem.id === item.id;
+
+                    card.className = `draggable-card flex flex-col items-center justify-center w-20 h-24 sm:w-24 sm:h-28 ${item.bg} border-2 ${isSelected ? 'ring-4 ring-blue-500 border-blue-500' : item.border} rounded-2xl shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-all select-none`;
+                    card.innerHTML = `
+                        <span class="text-3xl sm:text-4xl mb-1">${item.icon}</span>
+                        <span class="font-bold text-xs text-slate-700">${item.name}</span>
+                    `;
+                    pool.appendChild(card);
+                }
+            });
+
+            document.getElementById('unplaced-count-badge').innerText = `${unplacedCount} pendiente${unplacedCount !== 1 ? 's' : ''}`;
+        }
+
+        function renderSlots() {
+            const container = document.getElementById('slots-container');
+            container.innerHTML = '';
+
+            userSlots.forEach((slotItem, index) => {
+                const slot = document.createElement('div');
+                slot.className = `relative flex flex-col items-center justify-center w-24 h-32 sm:w-28 sm:h-36 rounded-2xl border-2 border-dashed transition-all select-none ${slotItem ? 'bg-white border-blue-300 shadow-sm' : 'bg-slate-50 border-slate-300 hover:border-blue-400'}`;
+                
+                slot.ondragover = (e) => { e.preventDefault(); slot.classList.add('drop-slot-active'); };
+                slot.ondragleave = () => slot.classList.remove('drop-slot-active');
+                slot.ondrop = (e) => handleDrop(e, index);
+                slot.onclick = () => handleSlotClick(index);
+
+                if (slotItem) {
+                    slot.innerHTML = `
+                        <span class="absolute top-2 left-2 text-xs font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-md">Casilla ${index + 1}</span>
+                        <button onclick="event.stopPropagation(); removeSlotItem(${index})" class="absolute top-2 right-2 text-slate-300 hover:text-red-500 text-xs p-1">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                        <span class="text-4xl sm:text-5xl mb-1">${slotItem.icon}</span>
+                        <span class="font-bold text-xs sm:text-sm text-slate-700">${slotItem.name}</span>
+                    `;
+                } else {
+                    slot.innerHTML = `
+                        <span class="text-2xl font-bold text-slate-300 font-heading mb-1">${index + 1}</span>
+                        <span class="text-xs text-slate-400 font-semibold">Vacío</span>
+                    `;
+                }
+
+                container.appendChild(slot);
+            });
+        }
+
+        /* ==================== INTERACCIONES (DRAG & DROP / CLICS) ==================== */
+        function handleDragStart(e, itemId) {
+            e.dataTransfer.setData('text/plain', itemId);
+        }
+
+        function handleDrop(e, slotIndex) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drop-slot-active');
+            const itemId = e.dataTransfer.getData('text/plain');
+            const item = shuffledItems.find(i => i.id === itemId);
+            if (item) {
+                placeItemInSlot(item, slotIndex);
+            }
+        }
+
+        function handlePoolItemClick(item) {
+            playSound('pop');
+            if (selectedUnplacedItem && selectedUnplacedItem.id === item.id) {
+                selectedUnplacedItem = null;
+            } else {
+                selectedUnplacedItem = item;
+                // Buscar el primer slot vacío para colocarlo automáticamente
+                const emptySlotIndex = userSlots.findIndex(s => s === null);
+                if (emptySlotIndex !== -1) {
+                    placeItemInSlot(item, emptySlotIndex);
+                    selectedUnplacedItem = null;
+                    return;
+                }
+            }
+            renderShuffledPool();
+        }
+
+        function handleSlotClick(slotIndex) {
+            if (selectedUnplacedItem) {
+                placeItemInSlot(selectedUnplacedItem, slotIndex);
+                selectedUnplacedItem = null;
+            } else if (userSlots[slotIndex]) {
+                removeSlotItem(slotIndex);
+            }
+        }
+
+        function placeItemInSlot(item, slotIndex) {
+            playSound('pop');
+            // Si el ítem ya estaba en otra casilla, vaciarla
+            const existingIndex = userSlots.findIndex(s => s && s.id === item.id);
+            if (existingIndex !== -1) {
+                userSlots[existingIndex] = null;
+            }
+
+            userSlots[slotIndex] = item;
+            renderShuffledPool();
+            renderSlots();
+        }
+
+        function removeSlotItem(slotIndex) {
+            playSound('pop');
+            userSlots[slotIndex] = null;
+            renderShuffledPool();
+            renderSlots();
+        }
+
+        /* ==================== COMPROBACIÓN Y RESULTADOS ==================== */
+        function checkAnswer() {
+            // Verificar si faltan casillas por rellenar
+            if (userSlots.some(s => s === null)) {
+                alert("Por favor, llena todas las casillas antes de comprobar.");
+                return;
+            }
+
+            let correctHits = 0;
+            userSlots.forEach((item, index) => {
+                if (item && item.id === targetSequence[index].id) {
+                    correctHits++;
+                }
+            });
+
+            const isPerfect = correctHits === targetSequence.length;
+
+            if (isPerfect) {
+                playSound('success');
+                streak++;
+                const earnedPoints = currentDifficulty * 25;
+                score += earnedPoints;
+
+                document.getElementById('stat-streak').innerText = streak;
+                document.getElementById('stat-score').innerText = score;
+
+                showModal({
+                    title: "¡Secuencia Correcta!",
+                    message: "¡Excelente memoria! Has colocado todos los elementos en el orden exacto.",
+                    hits: `${correctHits}/${targetSequence.length}`,
+                    points: `+${earnedPoints}`,
+                    isSuccess: true
+                });
+            } else {
+                playSound('error');
+                streak = 0;
+                document.getElementById('stat-streak').innerText = streak;
+
+                showModal({
+                    title: "¡Sigue Intentándolo!",
+                    message: `Has acertado ${correctHits} de ${targetSequence.length} elementos en su posición original.`,
+                    hits: `${correctHits}/${targetSequence.length}`,
+                    points: "+0",
+                    isSuccess: false
+                });
+            }
+        }
+
+        function showModal({ title, message, hits, points, isSuccess }) {
+            const modal = document.getElementById('modal-result');
+            const iconBg = document.getElementById('modal-icon-bg');
+            const icon = document.getElementById('modal-icon');
+
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-msg').innerText = message;
+            document.getElementById('modal-stat-hits').innerText = hits;
+            document.getElementById('modal-stat-points').innerText = points;
+
+            if (isSuccess) {
+                iconBg.className = "w-20 h-20 mx-auto mb-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl";
+                icon.className = "fa-solid fa-trophy";
+            } else {
+                iconBg.className = "w-20 h-20 mx-auto mb-4 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-3xl";
+                icon.className = "fa-solid fa-rotate-right";
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeModalAndNext() {
+            document.getElementById('modal-result').classList.add('hidden');
+            resetAndGenerateGame();
+        }
+    </script>
+</body>
+</html>
